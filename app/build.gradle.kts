@@ -48,4 +48,9 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.1.0")
     implementation("com.github.bumptech.glide:glide:4.11.0")
     implementation("com.squareup.picasso:picasso:2.71828")
+
+    // Use this dependency to bundle the model with your app
+    implementation("com.google.mlkit:face-detection:16.1.5")
+    // Use this dependency to use the dynamically downloaded model in Google Play Services
+    implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
 }
