@@ -14,6 +14,9 @@ import android.widget.ImageView
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import java.io.IOException
 
 
 class GalleryAdapter(
@@ -38,13 +41,37 @@ class GalleryAdapter(
     }
 
     override fun onBindViewHolder(holder: GalleryViewHolder, position: Int) {
-        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
+//        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
         Log.d("Hafiz_image",images[position])
         System.out.println(images[position].toUri())
 //        Picasso.get().load(images[position]).error(R.drawable.ic_launcher_background).into(holder.image)
 //        val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, images[position].toUri())
 //        holder.image.setImageBitmap(bitmap)
 //        val bitmap = BitmapFactory.decodeFile(images[position])
+
+        //1
+//        var image: InputImage = InputImage.fromFilePath(context, images[position].toUri())
+//        try {
+//            image = InputImage.fromFilePath(context, images[position].toUri())
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//        }
+////        //2
+//        val detector = FaceDetection.getClient()
+//        // Or, to use options:
+//        // val detector = FaceDetection.getClient(option);
+//        //3
+//        val result = detector.process(image)
+//            .addOnSuccessListener {
+//                // Task completed successfully
+//                holder.image.setImageURI(images[position].toUri())
+//            }
+//            .addOnFailureListener { e ->
+//                // Task failed with an exception
+////                holder.image = (R.drawable.ic_launcher_foreground)
+//            }
+
 //        holder.image.setImageBitmap(bitmap)
+        holder.image.setImageURI(images[position].toUri())
     }
 }

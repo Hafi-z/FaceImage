@@ -20,6 +20,7 @@ class ImagesGallery {
                 val absolutePathOfImage = cursor.getString(columnIndexData!!)
                 listOfAllImages.add(absolutePathOfImage)
             }
+            cursor?.close()
 
             return listOfAllImages
         }
