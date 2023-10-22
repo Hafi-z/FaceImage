@@ -53,4 +53,11 @@ dependencies {
     implementation("com.google.mlkit:face-detection:16.1.5")
     // Use this dependency to use the dynamically downloaded model in Google Play Services
     implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
+
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
+
+    var arch_version = "2.7.0-alpha01"
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:$arch_version")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:$arch_version")
 }

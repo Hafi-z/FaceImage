@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -24,6 +25,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
+var avgtime = 0L
+val minFaceSize = FaceDetectorOptions.Builder()
+    .setMinFaceSize(.5f)
+    .build()
+
+val detector = FaceDetection.getClient(minFaceSize)
 
 class GalleryAdapter(
     private var context: Context,
@@ -46,59 +53,66 @@ class GalleryAdapter(
         return images.size
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onBindViewHolder(holder: GalleryViewHolder, position: Int) {
-//        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
+        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
 //        Log.d("Hafiz_image",images[position])
         System.out.println(images[position].toUri())
 //        Picasso.get().load(images[position]).error(R.drawable.ic_launcher_background).into(holder.image)
 //        val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, images[position].toUri())
 //        holder.image.setImageBitmap(bitmap)
 //        var bitmap = BitmapFactory.decodeFile(images[position])
-        var bitmap = decodeSampledBitmapFromFilePath(images[position], 500, 500)
+//        var bitmap = decodeSampledBitmapFromFilePath(images[position], 300, 300)
 //        holder.image.setImageBitmap(bitmap)
-        Log.d("hafiz", "success1")
+//        Log.d("hafiz", "success1")
+        val a = System.currentTimeMillis()
+        Log.d("hafiztime", "start time: " + a)
 
         //1
-        val image = InputImage.fromBitmap(bitmap, 0)
-        Log.d("hafiz", "success2")
+//        val image = InputImage.fromBitmap(bitmap, 0)
+//        Log.d("hafiz", "success2")
 ////        //2
-        val detector = FaceDetection.getClient()
-        Log.d("hafiz", "success3")
+
+
+//        Log.d("hafiz", "success3")
 //        // Or, to use options:
 //        // val detector = FaceDetection.getClient(option);
+
+
+
 //        //3
-        try {
-            GlobalScope.launch(Dispatchers.Default) {
-                // This code will run on a background thread
-
-                val result = detector.process(image)
-                withContext(Dispatchers.Main) {
-                    // This code will run on the main thread
-
-                    result
-                        .addOnSuccessListener { faces ->
-                            for (face in faces) {
-                                Log.d("hafiz", "success4")
-
-                                // Process the face if needed
-
-                                // Assuming you have a 'bitmap' variable to work with
-                                // bitmap = Bitmap.createScaledBitmap(bitmap, 500, 500, false)
-
-                                // Update the ImageView on the main thread
-                                holder.image.setImageBitmap(bitmap)
-                                break
-                            }
-                        }
-                        .addOnFailureListener { e ->
-                            Log.d("hafiz", "failed")
-                        }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("hafiz", "An exception occurred: $e")
-        }
+//        try {
+//            GlobalScope.launch(Dispatchers.Default) {
+//                // This code will run on a background thread
+//
+//                val result = detector.process(image)
+//                withContext(Dispatchers.Main) {
+//                    // This code will run on the main thread
+//
+//                    result
+//                        .addOnSuccessListener { faces ->
+//                            for (face in faces) {
+//                                Log.d("hafiz", "success4")
+//                                // Process the face if needed
+//                                // bitmap = Bitmap.createScaledBitmap(bitmap, 500, 500, false)
+//                                // Update the ImageView on the main thread
+////                                holder.image.setImageBitmap(bitmap)
+//                                Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
+//                                break
+//                            }
+//                        }
+//                        .addOnFailureListener { e ->
+//                            Log.d("hafiz", "failed")
+//                        }
+//                }
+//            }
+//        } catch (e: Exception) {
+//            Log.e("hafiz", "An exception occurred: $e")
+//        }
+        val b = System.currentTimeMillis()
+        Log.d("hafiztime", "end time: " + b)
+        Log.d("hafiztime", "difference: " + ((b-a)/1000.0f))
+        avgtime += b-a
+        Log.d("hafiztime", "avg time: " + (avgtime.toFloat() / images.size))
 
 //        holder.image.setImageBitmap(bitmap)
 //        holder.image.setImageURI(images[position].toUri())
