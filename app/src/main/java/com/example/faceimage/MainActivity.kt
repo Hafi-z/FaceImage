@@ -1,10 +1,10 @@
 package com.example.faceimage
 
-import android.app.Activity
+import android.Manifest
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var recyclerView: RecyclerView
     lateinit var images: List<String>
+    lateinit var images2: MutableList<String>
     lateinit var galleryAdapter: GalleryAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,10 +22,15 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.rv_gallery_images)
 
-        if (ContextCompat.checkSelfPermission(this,
-            android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES), 101)
+                arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE), 101)
 //            loadImages()
         } else {
             loadImages()
@@ -35,6 +41,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.setHasFixedSize(true)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
         images = ImagesGallery.listOfImages(this)
+//        images2.add(images[0])
         galleryAdapter = GalleryAdapter(this, images)
         recyclerView.adapter = galleryAdapter
     }
