@@ -3,6 +3,7 @@ package com.example.faceimage
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -14,10 +15,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
     lateinit var recyclerView: RecyclerView
-    lateinit var images: List<String>
+    var images: List<String> = ArrayList()
     lateinit var images2: MutableList<String>
     lateinit var galleryAdapter: GalleryAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,11 +29,11 @@ class MainActivity : AppCompatActivity() {
 
         if (ContextCompat.checkSelfPermission(
                 this,
-                Manifest.permission.READ_MEDIA_IMAGES
+                Manifest.permission.READ_EXTERNAL_STORAGE
             )
             != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES), 101)
+                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), 101)
 //            loadImages()
         } else {
             loadImages()
@@ -42,11 +43,18 @@ class MainActivity : AppCompatActivity() {
     private fun loadImages() {
         recyclerView.setHasFixedSize(true)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
+        val callback = object : ImageProcessingCallback {
+            override fun onImagesProcessed(listOfFaceImages: List<String>) {
+                images = listOfFaceImages
+                Log.d("hafizsize", images.size.toString())
+                // Update the adapter with the processed images
+                galleryAdapter = GalleryAdapter(this@MainActivity, images)
+                recyclerView.adapter = galleryAdapter
+            }
+        }
         GlobalScope.launch(Dispatchers.Main) {
-            // Call the suspend function in a coroutine context
-            images = listOfImages(this@MainActivity)
-            galleryAdapter = GalleryAdapter(this@MainActivity, images)
-            recyclerView.adapter = galleryAdapter
+            listOfImages(this@MainActivity, callback)
+            Log.d("hafizsize", images.size.toString())
         }
     }
 
@@ -65,5 +73,9 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "permission denied", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    override fun onImagesProcessed(listOfFaceImages: List<String>) {
+        TODO("Not yet implemented")
     }
 }

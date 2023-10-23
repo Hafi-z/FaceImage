@@ -14,13 +14,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ImagesGallery {
 
     companion object {
-        suspend fun listOfImages(context: Context): ArrayList<String> {
+        suspend fun listOfImages(context: Context, callback: ImageProcessingCallback) {
 
             val listOfAllImages: ArrayList<String> = ArrayList()
             val listOfAllFaceImages: ArrayList<String> = ArrayList()
@@ -38,7 +39,7 @@ class ImagesGallery {
                 cnt++
             }
             cursor?.close()
-            Log.d("hafiz", cnt.toString())
+//            Log.d("hafiz", cnt.toString())
 
             ///PROCESSING PART
             val minFaceSize = FaceDetectorOptions.Builder()
@@ -97,24 +98,37 @@ class ImagesGallery {
 ////        holder.image.setImageURI(images[position].toUri())
 //            }
 
-            val deferredResults = listOfAllImages.map { img ->
-                GlobalScope.async(Dispatchers.Default) {
-                    val bitmap = decodeSampledBitmapFromFilePath(img, 500, 500)
+            // Process images in parallel using coroutines
+            Log.d("hafiz1", listOfAllImages.size.toString())
+            for (img in 0 until listOfAllImages.size) {
+                // Execute this in a coroutine
+//                withContext(Dispatchers.Default) {
+                    val bitmap = decodeSampledBitmapFromFilePath(listOfAllImages[img], 500, 500)
                     val image = InputImage.fromBitmap(bitmap, 0)
                     val result = detector.process(image)
-                    if (result.isSuccessful) {
-                        val faces = result.result
-                        if (faces.isNotEmpty()) {
-                            Log.d("hafiz", img)
-                            listOfAllFaceImages.add(img)
+
+                    result
+                        .addOnSuccessListener { faces ->
+                        // Task completed successfully
+                            Log.d("hafiz", listOfAllImages[img])
+                            if (faces.isNotEmpty()) listOfAllFaceImages.add(listOfAllImages[img])
+                            Log.d("hafiz", listOfAllFaceImages.size.toString())
+                            Log.d("hafiz", Thread.currentThread().name)
+                            if (img == listOfAllImages.size-1) {
+                                callback.onImagesProcessed(listOfAllFaceImages)
+                            }
                         }
-                    }
-                }
+                        .addOnFailureListener { e ->
+                            // Task failed with an exception
+                            if (img == listOfAllImages.size-1) {
+                                callback.onImagesProcessed(listOfAllFaceImages)
+                            }
+                        }
+//                Log.d("hafiz", listOfAllFaceImages.size.toString())
             }
 
-            deferredResults.awaitAll()
-            Log.d("hafizsize", listOfAllFaceImages.toString())
-            return listOfAllFaceImages
+//            Log.d("hafizsize", listOfAllFaceImages.size.toString())
+//            return listOfAllFaceImages
         }
 
         fun decodeSampledBitmapFromFilePath(
