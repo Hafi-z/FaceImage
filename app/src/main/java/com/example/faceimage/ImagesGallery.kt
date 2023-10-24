@@ -17,6 +17,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.exifinterface.media.ExifInterface
+
 
 class ImagesGallery {
 
@@ -97,6 +99,10 @@ class ImagesGallery {
 ////        holder.image.setImageBitmap(bitmap)
 ////        holder.image.setImageURI(images[position].toUri())
 //            }
+
+//            val exif = ExifInterface(imagePath)
+//            val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+//            val isFrontCamera = orientation == ExifInterface.ORIENTATION_FLIP_HORIZONTAL
 
             // Process images in parallel using coroutines
             Log.d("hafiz1", listOfAllImages.size.toString())

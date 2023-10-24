@@ -60,4 +60,7 @@ dependencies {
     var arch_version = "2.7.0-alpha01"
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:$arch_version")
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:$arch_version")
+
+    implementation ("androidx.exifinterface:exifinterface:1.3.3")
+
 }
