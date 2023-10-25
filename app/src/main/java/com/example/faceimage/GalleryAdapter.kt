@@ -44,6 +44,11 @@ class GalleryAdapter(
 //        }
     }
 
+    fun setImages(images: List<String>) {
+        this.images = images
+        notifyDataSetChanged() // Notify the adapter that the dataset has changed.
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GalleryViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.gallery_item, parent, false)
         return GalleryViewHolder(view)
@@ -54,7 +59,7 @@ class GalleryAdapter(
     }
 
     override fun onBindViewHolder(holder: GalleryViewHolder, position: Int) {
-        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
+        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_foreground).into(holder.image)
 //        Log.d("Hafiz_image",images[position])
         System.out.println(images[position].toUri())
 //        Picasso.get().load(images[position]).error(R.drawable.ic_launcher_background).into(holder.image)
