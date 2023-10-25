@@ -7,9 +7,6 @@ import android.graphics.BitmapFactory
 import android.provider.MediaStore
 import android.util.Log
 import com.bumptech.glide.Glide
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.FaceDetection
-import com.google.mlkit.vision.face.FaceDetectorOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -18,6 +15,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.exifinterface.media.ExifInterface
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
 
 
 class ImagesGallery {
@@ -29,13 +29,20 @@ class ImagesGallery {
             val listOfAllFaceImages: ArrayList<String> = ArrayList()
             val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
             val projection = arrayOf(MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID)
-            val orderBy = MediaStore.Images.Media._ID
+            val orderBy = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+//            val orderBy = MediaStore.Images.Media._ID
             val cursor = context.contentResolver.query(uri, projection, null, null, orderBy)
             val columnIndexData = cursor?.getColumnIndex(MediaStore.Images.Media.DATA)
             var cnt = 1
 
             while (cursor?.moveToNext() == true) {
                 val absolutePathOfImage = cursor.getString(columnIndexData!!)
+
+//                val exif = ExifInterface(absolutePathOfImage)
+//                val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+//                val isFrontCamera = orientation == ExifInterface.ORIENTATION_FLIP_HORIZONTAL
+//                if (isFrontCamera) listOfAllImages.add(absolutePathOfImage)
+
                 listOfAllImages.add(absolutePathOfImage)
 //                if(cnt>100)break
                 cnt++
@@ -45,6 +52,7 @@ class ImagesGallery {
 
             ///PROCESSING PART
             val minFaceSize = FaceDetectorOptions.Builder()
+                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                 .setMinFaceSize(.5f)
                 .build()
             val detector = FaceDetection.getClient(minFaceSize)
@@ -120,21 +128,43 @@ class ImagesGallery {
                             if (faces.isNotEmpty()) listOfAllFaceImages.add(listOfAllImages[img])
                             Log.d("hafiz", listOfAllFaceImages.size.toString())
                             Log.d("hafiz", Thread.currentThread().name)
-                            if (img == listOfAllImages.size-1) {
+//                            if (img == listOfAllImages.size-1) {
                                 callback.onImagesProcessed(listOfAllFaceImages)
-                            }
+//                            }
                         }
                         .addOnFailureListener { e ->
                             // Task failed with an exception
-                            if (img == listOfAllImages.size-1) {
+//                            if (img == listOfAllImages.size-1) {
                                 callback.onImagesProcessed(listOfAllFaceImages)
-                            }
+//                            }
                         }
 //                Log.d("hafiz", listOfAllFaceImages.size.toString())
             }
 
 //            Log.d("hafizsize", listOfAllFaceImages.size.toString())
 //            return listOfAllFaceImages
+        }
+
+        fun listOfImages(context: Context): ArrayList<String> {
+
+            val listOfAllImages: ArrayList<String> = ArrayList()
+            val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            val projection = arrayOf(MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID)
+            val orderBy = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
+            val cursor = context.contentResolver.query(uri, projection, null, null, orderBy)
+            val columnIndexData = cursor?.getColumnIndex(MediaStore.Images.Media.DATA)
+            var cnt = 1
+
+            while (cursor?.moveToNext() == true) {
+                val absolutePathOfImage = cursor.getString(columnIndexData!!)
+                listOfAllImages.add(absolutePathOfImage)
+//                if(cnt>100)break
+                cnt++
+            }
+            cursor?.close()
+//            Log.d("hafiz", cnt.toString())
+
+            return listOfAllImages
         }
 
         fun decodeSampledBitmapFromFilePath(

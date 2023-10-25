@@ -13,8 +13,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.net.toUri
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
@@ -33,15 +36,61 @@ val minFaceSize = FaceDetectorOptions.Builder()
 val detector = FaceDetection.getClient(minFaceSize)
 
 class GalleryAdapter(
-    private var context: Context,
-    private var images: List<String>
+    private var context: Context
 ) : RecyclerView.Adapter<GalleryAdapter.GalleryViewHolder>() {
+    private var images: ArrayList<String> = ArrayList()
 
     inner class GalleryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var image: ImageView = itemView.findViewById(R.id.image)
 //        init {
 //            image = itemView.findViewById(R.id.image)
 //        }
+    }
+
+    inner class ThemeDiffUtilCallback(
+        val oldItem:ArrayList<String>,
+        val newItem:ArrayList<String>
+    ): DiffUtil.Callback() {
+        override fun getOldListSize(): Int {
+            return oldItem.size
+        }
+
+        override fun getNewListSize(): Int {
+            return newItem.size
+        }
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldItem[oldItemPosition] == newItem[newItemPosition]
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldItem[oldItemPosition] == newItem[newItemPosition]
+        }
+
+    }
+
+    fun update(themeList: ArrayList<String>) {
+        Log.d("Sizeeee", "" + themeList.size)
+        val callback = ThemeDiffUtilCallback(this.images, themeList)
+        val diffResult =  DiffUtil.calculateDiff(callback)
+        this.images.clear()
+        this.images.addAll(themeList)
+        diffResult.dispatchUpdatesTo(this)
+    }
+
+    fun setImageUri(imagesUri: String) {
+        this.images.add(imagesUri)
+        notifyDataSetChanged() // Notify the adapter that the dataset has changed.
+    }
+
+    fun setImages(images: ArrayList<String>) {
+        this.images = images
+        notifyDataSetChanged() // Notify the adapter that the dataset has changed.
+    }
+
+    fun addImage(image: String) {
+//        this.images.add(image)
+        notifyItemInserted(this.images.size-1) // Notify the adapter that the dataset has changed.
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GalleryViewHolder {
@@ -54,7 +103,13 @@ class GalleryAdapter(
     }
 
     override fun onBindViewHolder(holder: GalleryViewHolder, position: Int) {
-        Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
+        Glide.with(context)
+            .load(images[position])
+            .apply(RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL))
+            .placeholder(R.drawable.ic_launcher_foreground)
+            .into(holder.image)
+
+
 //        Log.d("Hafiz_image",images[position])
         System.out.println(images[position].toUri())
 //        Picasso.get().load(images[position]).error(R.drawable.ic_launcher_background).into(holder.image)
