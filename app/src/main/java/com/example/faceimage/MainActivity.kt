@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -30,6 +32,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     lateinit var recyclerView: RecyclerView
     var images: ArrayList<String> = ArrayList()
     var tempImages: ArrayList<String> = ArrayList()
+    var tempImages1: ArrayList<String> = ArrayList()
     lateinit var images2: MutableList<String>
     lateinit var galleryAdapter: GalleryAdapter
     var callback = MyCallback()
@@ -69,35 +72,43 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     private fun loadImages() {
         tempImages = listOfImages(this@MainActivity)
 //        images.retainAll { it in tempImages }
-        images.clear()
+
+        if(tempImages1!=tempImages) {
+            images.clear()
+            tempImages1 = tempImages
+
+
 //        galleryAdapter.update(images)
 
-        lifecycleScope.launch(Dispatchers.Default) {
-            for (img in 0 until tempImages.size) {
-                if (isProcessed[tempImages[img]] == null) {
-                    isProcessed[tempImages[img]] = 1
-                    // Execute this in a coroutine
+            lifecycleScope.launch(Dispatchers.Default) {
+                var currentIndex = 0
+
+                for (img in 0 until tempImages.size) {
+                    currentIndex++
+                    if (isProcessed[tempImages[img]] == null) {
+                        isProcessed[tempImages[img]] = 1
+                        // Execute this in a coroutine
 //                withContext(Dispatchers.Default) {
-                    val bitmap =
-                        ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
-                    val image = InputImage.fromBitmap(bitmap, 0)
-                    val task = detector.process(image)
-                    try {
-                        val result = Tasks.await(task, 300, TimeUnit.MILLISECONDS)
-                        if (result.isNotEmpty()) {
-                            isProcessed[tempImages[img]] = 2
-                            images.add(tempImages[img])
-                            withContext(Dispatchers.Main) {
-                                galleryAdapter.update(images)
+                        val bitmap =
+                            ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
+                        val image = InputImage.fromBitmap(bitmap, 0)
+                        val task = detector.process(image)
+                        try {
+                            val result = Tasks.await(task, 300, TimeUnit.MILLISECONDS)
+                            if (result.isNotEmpty()) {
+                                isProcessed[tempImages[img]] = 2
+                                images.add(tempImages[img])
+//                            withContext(Dispatchers.Main) {
+//                                galleryAdapter.update(images)
+//                            }
                             }
+                        } catch (_: InterruptedException) {
+
+                        } catch (_: TimeoutException) {
+
+                        } catch (_: ExecutionException) {
+
                         }
-                    } catch (_: InterruptedException) {
-
-                    } catch (_: TimeoutException) {
-
-                    } catch (_: ExecutionException) {
-
-                    }
 
 //                result
 //                    .addOnSuccessListener { faces ->
@@ -123,17 +134,39 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 ////                            }
 //                    }
 //                Log.d("hafiz", listOfAllFaceImages.size.toString())
-                }
-                else if (isProcessed[tempImages[img]] == 2) {
-                    images.add(tempImages[img])
-                    withContext(Dispatchers.Main) {
-                        galleryAdapter.update(images)
+                    } else if (isProcessed[tempImages[img]] == 2) {
+                        images.add(tempImages[img])
+//                    withContext(Dispatchers.Main) {
+//                        galleryAdapter.update(images)
+//                    }
+
                     }
+
+
+                    if (currentIndex >= 27) {
+                        if (currentIndex % 15 == 0) {
+
+                            withContext(Dispatchers.Main) {
+                                findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+                                galleryAdapter.update(images)
+                                findViewById<ProgressBar>(R.id.progressBar).visibility =
+                                    View.VISIBLE
+                            }
+
+                        }
+                    }
+
                 }
 
-            }
+                withContext(Dispatchers.Main) {
+                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+                    galleryAdapter.update(images)
 
-            Log.d("hafizsize", images.size.toString())
+
+                }
+
+                Log.d("hafizsize", images.size.toString())
+            }
         }
 
     }
