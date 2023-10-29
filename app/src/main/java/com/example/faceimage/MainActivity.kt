@@ -1,6 +1,5 @@
 package com.example.faceimage
 
-import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -18,10 +17,7 @@ import com.example.faceimage.ImagesGallery.Companion.listOfImages
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -36,6 +32,8 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     lateinit var images2: MutableList<String>
     lateinit var galleryAdapter: GalleryAdapter
     var callback = MyCallback()
+
+    var isloaded = false
 
     var isProcessed: MutableMap<String, Int> = mutableMapOf()
 
@@ -67,6 +65,20 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
         } else {
             //loadImages()
         }
+
+
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (!recyclerView.canScrollVertically(1) and !isloaded) {
+                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
+                   // Toast.makeText(this@MainActivity, "Last", Toast.LENGTH_LONG).show()
+                }
+                else findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+            }
+        })
+
     }
 
     private fun loadImages() {
@@ -82,6 +94,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
             lifecycleScope.launch(Dispatchers.Default) {
                 var currentIndex = 0
+                isloaded = false
 
                 for (img in 0 until tempImages.size) {
                     currentIndex++
@@ -149,8 +162,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                             withContext(Dispatchers.Main) {
                                 findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
                                 galleryAdapter.update(images)
-                                findViewById<ProgressBar>(R.id.progressBar).visibility =
-                                    View.VISIBLE
+                                //findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
                             }
 
                         }
@@ -161,8 +173,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                 withContext(Dispatchers.Main) {
                     findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
                     galleryAdapter.update(images)
-
-
+                    isloaded = true
                 }
 
                 Log.d("hafizsize", images.size.toString())
