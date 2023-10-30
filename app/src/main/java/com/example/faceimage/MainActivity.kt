@@ -100,48 +100,68 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     }
 
     private fun loadImages() {
-//        tempImages = listOfImages(this@MainActivity)
-//        images.clear()
 
+        tempImages = listOfImages(this@MainActivity)
 
-
-        job = lifecycleScope.launch(Dispatchers.Default) {
-            var currentIndex = 0
-            isloaded = false
-            val imageRepository = ImageRepository(db.imageDao())
-            tempImages = listOfImages(this@MainActivity)
+        if(tempImages1!=tempImages) {
             images.clear()
 
-            for (img in 0 until tempImages.size) {
-                currentIndex++
-                val curImage = imageRepository.getImageByPath(tempImages[img])
-                if (curImage == null) {
-                    isProcessed[tempImages[img]] = 1
-                    // Execute this in a coroutine
-//                withContext(Dispatchers.Default) {
-                    val bitmap =
-                        ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
-                    val image = InputImage.fromBitmap(bitmap, 0)
-                    val task = detector.process(image)
-                    try {
-                        val result = Tasks.await(task)
-                        if (result.isNotEmpty()) {
-                            isProcessed[tempImages[img]] = 2
-                            imageRepository.insertImage(ImageEntity(tempImages[img], true, true))
-                            images.add(tempImages[img])
-                            withContext(Dispatchers.Main) {
-                                galleryAdapter.update(images)
+
+            job = lifecycleScope.launch(Dispatchers.Default) {
+                var currentIndex = 0
+                isloaded = false
+                val imageRepository = ImageRepository(db.imageDao())
+
+
+                for (img in 0 until tempImages.size) {
+
+                    Log.d("imageSize", images.size.toString())
+                    currentIndex++
+
+
+
+                    val curImage = imageRepository.getImageByPath(tempImages[img])
+                    if (curImage == null) {
+                        isProcessed[tempImages[img]] = 1
+
+                        val bitmap =
+                            ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
+                        val image = InputImage.fromBitmap(bitmap, 0)
+                        val task = detector.process(image)
+                        try {
+                            val result = Tasks.await(task)
+                            if (result.isNotEmpty()) {
+
+                                isProcessed[tempImages[img]] = 2
+                                imageRepository.insertImage(
+                                    ImageEntity(
+                                        tempImages[img],
+                                        true,
+                                        true
+                                    )
+                                )
+                                images.add(tempImages[img])
+//                                withContext(Dispatchers.Main) {
+//                                    galleryAdapter.update(images)
+//                                }
+                            } else {
+                                imageRepository.insertImage(
+                                    ImageEntity(
+                                        tempImages[img],
+                                        true,
+                                        false
+                                    )
+                                )
                             }
-                        } else {
-                            imageRepository.insertImage(ImageEntity(tempImages[img], true, false))
+                        } catch (_: InterruptedException) {
+                            Log.d("exception", "loadImages: InterruptedException")
+                        } catch (_: TimeoutException) {
+                            Log.d("exception", "loadImages: InterruptedException")
+                        } catch (_: ExecutionException) {
+                            Log.d("exception", "loadImages: InterruptedException")
+                        } catch (e:Exception){
+                            Log.d("exception", "loadImages: AnyException")
                         }
-                    } catch (_: InterruptedException) {
-
-                    } catch (_: TimeoutException) {
-
-                    } catch (_: ExecutionException) {
-
-                    }
 
 //                result
 //                    .addOnSuccessListener { faces ->
@@ -154,17 +174,16 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 //                    }
 //                    .addOnFailureListener { e ->
 //                    }
-                }
-                else if (curImage.isFace) {
-                    images.add(tempImages[img])
-                    withContext(Dispatchers.Main) {
-                        galleryAdapter.update(images)
+                    } else if (curImage.isFace) {
+                        images.add(tempImages[img])
+//                        withContext(Dispatchers.Main) {
+//                            galleryAdapter.update(images)
+//                        }
                     }
-                }
 
 
-                if (currentIndex >= 27) {
-                    if (currentIndex % 15 == 0) {
+
+                    if (currentIndex % 3 == 0 && images.size>0) {
 
                         withContext(Dispatchers.Main) {
                             findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
@@ -173,17 +192,21 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                         }
 
                     }
+
+
                 }
 
-            }
+                withContext(Dispatchers.Main) {
+                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+                    galleryAdapter.update(images)
+                    isloaded = true
 
-            withContext(Dispatchers.Main) {
-                findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
-                galleryAdapter.update(images)
-                isloaded = true
-            }
+                }
 
-            Log.d("hafizsize", images.size.toString())
+                tempImages1 = tempImages
+
+                Log.d("hafizsize", images.size.toString())
+            }
         }
     }
 

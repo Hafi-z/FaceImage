@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.DiffUtil
@@ -30,7 +31,8 @@ import java.io.IOException
 
 var avgtime = 0L
 val minFaceSize = FaceDetectorOptions.Builder()
-    .setMinFaceSize(.5f)
+    .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+    .setMinFaceSize(1f)
     .build()
 
 val detector = FaceDetection.getClient(minFaceSize)
@@ -46,6 +48,9 @@ class GalleryAdapter(
 //            image = itemView.findViewById(R.id.image)
 //        }
     }
+
+    // A view holder for displaying a progress bar
+    inner class ProgressViewHolder(val progressBar: ProgressBar) : RecyclerView.ViewHolder(progressBar)
 
     inner class ThemeDiffUtilCallback(
         val oldItem:ArrayList<String>,
