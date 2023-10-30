@@ -1,12 +1,8 @@
 package com.example.faceimage
-import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -19,13 +15,10 @@ import com.example.faceimage.ImagesGallery.Companion.listOfImages
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class MainActivity : AppCompatActivity(), ImageProcessingCallback {
@@ -38,7 +31,6 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     lateinit var galleryAdapter: GalleryAdapter
     var callback = MyCallback()
 
-    var isloaded = false
 
     var isProcessed: MutableMap<String, Int> = mutableMapOf()
 
@@ -63,10 +55,20 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
         galleryAdapter = GalleryAdapter(this@MainActivity)
         recyclerView.setHasFixedSize(true)
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
         Log.d("hafizsize", images.size.toString())
         recyclerView.adapter = galleryAdapter
 
+        val gridLayoutManager = GridLayoutManager(this, 3)
+        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return when (galleryAdapter.getItemViewType(position)) {
+                    GalleryAdapter.VIEW_TYPE_IMAGE -> 1 // Image items span 1 column
+                    GalleryAdapter.VIEW_TYPE_PROGRESS -> 3 // Progress items span 3 columns
+                    else -> -1
+                }
+            }
+        }
+        recyclerView.layoutManager = gridLayoutManager
 
 
         val greaterThanEqualTiramisu = android.Manifest.permission.READ_MEDIA_IMAGES
@@ -86,16 +88,16 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 
 
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (!recyclerView.canScrollVertically(1) and !isloaded) {
-                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
-                   // Toast.makeText(this@MainActivity, "Last", Toast.LENGTH_LONG).show()
-                }
-                else findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
-            }
-        })
+//        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+//                super.onScrollStateChanged(recyclerView, newState)
+//                if (!recyclerView.canScrollVertically(1) and !isloaded) {
+//                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
+//                   // Toast.makeText(this@MainActivity, "Last", Toast.LENGTH_LONG).show()
+//                }
+//                else findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+//            }
+//        })
 
     }
 
@@ -109,11 +111,11 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
             job = lifecycleScope.launch(Dispatchers.Default) {
                 var currentIndex = 0
-                isloaded = false
                 val imageRepository = ImageRepository(db.imageDao())
 
 
                 for (img in 0 until tempImages.size) {
+
 
                     Log.d("imageSize", images.size.toString())
                     currentIndex++
@@ -184,23 +186,23 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 
                     if (currentIndex % 3 == 0 && images.size>0) {
+                        images.add("dummy")
 
                         withContext(Dispatchers.Main) {
-                            findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
                             galleryAdapter.update(images)
-                            //findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
                         }
 
+                        if (images.isNotEmpty()) {
+                            if(images[images.size-1]=="dummy") {
+                                images.removeAt(images.lastIndex)
+                            }
+                        }
                     }
-
-
                 }
 
-                withContext(Dispatchers.Main) {
-                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
-                    galleryAdapter.update(images)
-                    isloaded = true
 
+                withContext(Dispatchers.Main) {
+                    galleryAdapter.update(images)
                 }
 
                 tempImages1 = tempImages

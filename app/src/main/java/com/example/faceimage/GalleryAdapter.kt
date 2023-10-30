@@ -39,7 +39,13 @@ val detector = FaceDetection.getClient(minFaceSize)
 
 class GalleryAdapter(
     private var context: Context
-) : RecyclerView.Adapter<GalleryAdapter.GalleryViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    companion object {
+        const val VIEW_TYPE_IMAGE = 1
+        const val VIEW_TYPE_PROGRESS = 2
+    }
+
     private var images: ArrayList<String> = ArrayList()
 
     inner class GalleryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -50,7 +56,17 @@ class GalleryAdapter(
     }
 
     // A view holder for displaying a progress bar
-    inner class ProgressViewHolder(val progressBar: ProgressBar) : RecyclerView.ViewHolder(progressBar)
+    inner class ProgressViewHolder(val progressBar: View) : RecyclerView.ViewHolder(progressBar)
+
+    override fun getItemViewType(position: Int): Int {
+        return if (images[position]!="dummy") {
+// Return image view type for the first n items, where n is the size of the image list
+            VIEW_TYPE_IMAGE
+        } else {
+// Return progress view type for the last item
+            VIEW_TYPE_PROGRESS
+        }
+    }
 
     inner class ThemeDiffUtilCallback(
         val oldItem:ArrayList<String>,
@@ -97,83 +113,42 @@ class GalleryAdapter(
         notifyItemInserted(this.images.size-1) // Notify the adapter that the dataset has changed.
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GalleryViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.gallery_item, parent, false)
-        return GalleryViewHolder(view)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+//        val view = LayoutInflater.from(parent.context).inflate(R.layout.gallery_item, parent, false)
+//        return GalleryViewHolder(view)
+
+        return when (viewType) {
+            VIEW_TYPE_IMAGE -> {
+// Inflate an image view layout
+                val view = LayoutInflater.from(context).inflate(R.layout.gallery_item, parent, false)
+                GalleryViewHolder(view)
+            }
+            VIEW_TYPE_PROGRESS -> {
+// Inflate a progress bar layout
+                val progressBar = LayoutInflater.from(context).inflate(R.layout.progress_bar, parent, false)
+                ProgressViewHolder(progressBar)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
     }
 
     override fun getItemCount(): Int {
         return images.size
     }
 
-    override fun onBindViewHolder(holder: GalleryViewHolder, position: Int) {
-        Glide.with(context)
-            .load(images[position])
-            .apply(RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL))
-            .placeholder(R.drawable.ic_launcher_foreground)
-            .into(holder.image)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
 
-//        Log.d("Hafiz_image",images[position])
-        System.out.println(images[position].toUri())
-//        Picasso.get().load(images[position]).error(R.drawable.ic_launcher_background).into(holder.image)
-//        val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, images[position].toUri())
-//        holder.image.setImageBitmap(bitmap)
-//        var bitmap = BitmapFactory.decodeFile(images[position])
-//        var bitmap = decodeSampledBitmapFromFilePath(images[position], 300, 300)
-//        holder.image.setImageBitmap(bitmap)
-//        Log.d("hafiz", "success1")
-        val a = System.currentTimeMillis()
-        Log.d("hafiztime", "start time: " + a)
+        if(images[position]!="dummy") {
+            Glide.with(context)
+                .load(images[position])
+                .apply(RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL))
+                .placeholder(R.drawable.ic_launcher_foreground)
+                .into((holder as GalleryViewHolder).image)
+        }
+        else{
+            ;
+        }
 
-        //1
-//        val image = InputImage.fromBitmap(bitmap, 0)
-//        Log.d("hafiz", "success2")
-////        //2
-
-
-//        Log.d("hafiz", "success3")
-//        // Or, to use options:
-//        // val detector = FaceDetection.getClient(option);
-
-
-
-//        //3
-//        try {
-//            GlobalScope.launch(Dispatchers.Default) {
-//                // This code will run on a background thread
-//
-//                val result = detector.process(image)
-//                withContext(Dispatchers.Main) {
-//                    // This code will run on the main thread
-//
-//                    result
-//                        .addOnSuccessListener { faces ->
-//                            for (face in faces) {
-//                                Log.d("hafiz", "success4")
-//                                // Process the face if needed
-//                                // bitmap = Bitmap.createScaledBitmap(bitmap, 500, 500, false)
-//                                // Update the ImageView on the main thread
-////                                holder.image.setImageBitmap(bitmap)
-//                                Glide.with(context).load(images[position]).placeholder(R.drawable.ic_launcher_background).into(holder.image)
-//                                break
-//                            }
-//                        }
-//                        .addOnFailureListener { e ->
-//                            Log.d("hafiz", "failed")
-//                        }
-//                }
-//            }
-//        } catch (e: Exception) {
-//            Log.e("hafiz", "An exception occurred: $e")
-//        }
-        val b = System.currentTimeMillis()
-        Log.d("hafiztime", "end time: " + b)
-        Log.d("hafiztime", "difference: " + ((b-a)/1000.0f))
-        avgtime += b-a
-        Log.d("hafiztime", "avg time: " + (avgtime.toFloat() / images.size))
-
-//        holder.image.setImageBitmap(bitmap)
-//        holder.image.setImageURI(images[position].toUri())
     }
 
     fun decodeSampledBitmapFromFilePath(
