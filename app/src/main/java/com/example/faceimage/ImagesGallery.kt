@@ -28,7 +28,7 @@ class ImagesGallery {
             val listOfAllImages: ArrayList<String> = ArrayList()
             val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
             val projection = arrayOf(MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID)
-            val orderBy = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
+            val orderBy = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
             val cursor = context.contentResolver.query(uri, projection, null, null, orderBy)
             val columnIndexData = cursor?.getColumnIndex(MediaStore.Images.Media.DATA)
             var cnt = 1

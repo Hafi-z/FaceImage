@@ -1,6 +1,7 @@
 package com.example.faceimage
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -12,11 +13,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Room
 import com.example.faceimage.ImagesGallery.Companion.listOfImages
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -36,9 +39,22 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
     var isProcessed: MutableMap<String, Int> = mutableMapOf()
 
+    val db by lazy {
+        Room.databaseBuilder(
+            applicationContext,
+            ImageDatabase::class.java,
+            "images.db"
+        ).build()
+    }
+
+    var job: Job? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+
 
         recyclerView = findViewById(R.id.rv_gallery_images)
 
@@ -67,14 +83,19 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     }
 
     private fun loadImages() {
-        tempImages = listOfImages(this@MainActivity)
-//        images.retainAll { it in tempImages }
-        images.clear()
-//        galleryAdapter.update(images)
+//        tempImages = listOfImages(this@MainActivity)
+//        images.clear()
 
-        lifecycleScope.launch(Dispatchers.Default) {
+
+
+        job = lifecycleScope.launch(Dispatchers.Default) {
+            val imageRepository = ImageRepository(db.imageDao())
+            tempImages = listOfImages(this@MainActivity)
+            images.clear()
+
             for (img in 0 until tempImages.size) {
-                if (isProcessed[tempImages[img]] == null) {
+                val curImage = imageRepository.getImageByPath(tempImages[img])
+                if (curImage == null) {
                     isProcessed[tempImages[img]] = 1
                     // Execute this in a coroutine
 //                withContext(Dispatchers.Default) {
@@ -83,13 +104,16 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                     val image = InputImage.fromBitmap(bitmap, 0)
                     val task = detector.process(image)
                     try {
-                        val result = Tasks.await(task, 300, TimeUnit.MILLISECONDS)
+                        val result = Tasks.await(task)
                         if (result.isNotEmpty()) {
                             isProcessed[tempImages[img]] = 2
+                            imageRepository.insertImage(ImageEntity(tempImages[img], true, true))
                             images.add(tempImages[img])
                             withContext(Dispatchers.Main) {
                                 galleryAdapter.update(images)
                             }
+                        } else {
+                            imageRepository.insertImage(ImageEntity(tempImages[img], true, false))
                         }
                     } catch (_: InterruptedException) {
 
@@ -101,30 +125,17 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 //                result
 //                    .addOnSuccessListener { faces ->
-//                        // Task completed successfully
 //                        Log.d("hafiz", tempImages[img])
 //                        if (faces.isNotEmpty()) {
 //                            isProcessed[tempImages[img]] = 2
 //                            images.add(tempImages[img])
 //                            galleryAdapter.update(images)
-////                            galleryAdapter.addImage(tempImages[img])
-////                            galleryAdapter.notifyItemInserted(images.size - 1)
 //                        }
-//                        Log.d("hafiz", images.size.toString())
-//                        Log.d("hafiz", Thread.currentThread().name)
-////                            if (img == tempImages.size-1) {
-////                    callback.onImagesProcessed(listOfAllFaceImages)
-////                            }
 //                    }
 //                    .addOnFailureListener { e ->
-//                        // Task failed with an exception
-////                            if (img == tempImages.size-1) {
-////                    callback.onImagesProcessed(listOfAllFaceImages)
-////                            }
 //                    }
-//                Log.d("hafiz", listOfAllFaceImages.size.toString())
                 }
-                else if (isProcessed[tempImages[img]] == 2) {
+                else if (curImage.isFace) {
                     images.add(tempImages[img])
                     withContext(Dispatchers.Main) {
                         galleryAdapter.update(images)
@@ -136,13 +147,32 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
             Log.d("hafizsize", images.size.toString())
         }
 
+
+
     }
+
+//    fun fetchAndStoreImages(context: Context, imageRepository: ImageRepository) {
+//        val images = images // Implement your method for fetching images
+//        val imageEntities = images.mapIndexed { _, imagePath ->
+//            ImageEntity(imagePath)
+//        }
+//        imageRepository.insertImage(imageEntities)
+//    }
+
 
     override fun onResume() {
         super.onResume()
 
         loadImages()
 
+    }
+
+    override fun onPause() {
+        if(job!=null)
+        {
+            job!!.cancel()
+        }
+        super.onPause()
     }
 
     override fun onRequestPermissionsResult(
