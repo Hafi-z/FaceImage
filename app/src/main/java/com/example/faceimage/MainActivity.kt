@@ -1,11 +1,12 @@
 package com.example.faceimage
-
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -22,7 +23,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -33,9 +33,12 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     lateinit var recyclerView: RecyclerView
     var images: ArrayList<String> = ArrayList()
     var tempImages: ArrayList<String> = ArrayList()
+    var tempImages1: ArrayList<String> = ArrayList()
     lateinit var images2: MutableList<String>
     lateinit var galleryAdapter: GalleryAdapter
     var callback = MyCallback()
+
+    var isloaded = false
 
     var isProcessed: MutableMap<String, Int> = mutableMapOf()
 
@@ -80,6 +83,20 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
         } else {
             //loadImages()
         }
+
+
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (!recyclerView.canScrollVertically(1) and !isloaded) {
+                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
+                   // Toast.makeText(this@MainActivity, "Last", Toast.LENGTH_LONG).show()
+                }
+                else findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+            }
+        })
+
     }
 
     private fun loadImages() {
@@ -89,11 +106,14 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 
         job = lifecycleScope.launch(Dispatchers.Default) {
+            var currentIndex = 0
+            isloaded = false
             val imageRepository = ImageRepository(db.imageDao())
             tempImages = listOfImages(this@MainActivity)
             images.clear()
 
             for (img in 0 until tempImages.size) {
+                currentIndex++
                 val curImage = imageRepository.getImageByPath(tempImages[img])
                 if (curImage == null) {
                     isProcessed[tempImages[img]] = 1
@@ -142,14 +162,31 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                     }
                 }
 
+
+                if (currentIndex >= 27) {
+                    if (currentIndex % 15 == 0) {
+
+                        withContext(Dispatchers.Main) {
+                            findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+                            galleryAdapter.update(images)
+                            //findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
+                        }
+
+                    }
+                }
+
+            }
+
+            withContext(Dispatchers.Main) {
+                findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+                galleryAdapter.update(images)
+                isloaded = true
             }
 
             Log.d("hafizsize", images.size.toString())
         }
-
-
-
     }
+
 
 //    fun fetchAndStoreImages(context: Context, imageRepository: ImageRepository) {
 //        val images = images // Implement your method for fetching images
