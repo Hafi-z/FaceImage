@@ -138,11 +138,16 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                     if (curImage == null) {
                         isProcessed[tempImages[img]] = 1
 
-                        val bitmap =
-                            ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
-                        val image = InputImage.fromBitmap(bitmap, 0)
-                        val task = detector.process(image)
+//                        val bitmap =
+//                            ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
+//                        val image = InputImage.fromBitmap(bitmap, 0)
+//                        val task = detector.process(image)
                         try {
+                            val bitmap =
+                                ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
+                            val image = InputImage.fromBitmap(bitmap, 0)
+                            val task = detector.process(image)
+
                             val result = Tasks.await(task)
                             if (result.isNotEmpty()) {
 
@@ -258,7 +263,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == 101) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "permission granted", Toast.LENGTH_SHORT).show()
                 //loadImages3()
             } else {
