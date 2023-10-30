@@ -110,7 +110,19 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 
             job = lifecycleScope.launch(Dispatchers.Default) {
-                var currentIndex = 0
+
+                images.add("dummy")
+
+                withContext(Dispatchers.Main) {
+                    galleryAdapter.update(images)
+                }
+
+                if (images.isNotEmpty()) {
+                    if(images[images.size-1]=="dummy") {
+                        images.removeAt(images.lastIndex)
+                    }
+                }
+
                 val imageRepository = ImageRepository(db.imageDao())
 
 
@@ -118,7 +130,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 
                     Log.d("imageSize", images.size.toString())
-                    currentIndex++
+
 
 
 
@@ -185,7 +197,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
 
 
-                    if (currentIndex % 3 == 0 && images.size>0) {
+                    if ( images.size>0 && images.size % 6 == 0) {
                         images.add("dummy")
 
                         withContext(Dispatchers.Main) {
@@ -211,6 +223,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
             }
         }
     }
+
 
 
 //    fun fetchAndStoreImages(context: Context, imageRepository: ImageRepository) {

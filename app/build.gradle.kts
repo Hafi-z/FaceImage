@@ -70,6 +70,8 @@ dependencies {
 
     implementation ("androidx.exifinterface:exifinterface:1.3.3")
 
+    implementation ("com.intuit.sdp:sdp-android:1.1.0")
+
     // Room
     val roomVersion = "2.5.2"
     implementation("androidx.room:room-ktx:$roomVersion")
