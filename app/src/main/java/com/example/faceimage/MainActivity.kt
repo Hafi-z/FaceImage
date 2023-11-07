@@ -3,6 +3,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -30,6 +32,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
     lateinit var images2: MutableList<String>
     lateinit var galleryAdapter: GalleryAdapter
     var callback = MyCallback()
+    private var imageIndex = 0
 
 
     var isProcessed: MutableMap<String, Int> = mutableMapOf()
@@ -50,6 +53,8 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
         setContentView(R.layout.activity_main)
 
 
+        findViewById<TextView>(R.id.tv_no_photo_found).visibility = View.GONE
+        imageIndex = 0
 
         recyclerView = findViewById(R.id.rv_gallery_images)
 
@@ -86,29 +91,27 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
             //loadImages()
         }
 
+    }
 
-
-//        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-//                super.onScrollStateChanged(recyclerView, newState)
-//                if (!recyclerView.canScrollVertically(1) and !isloaded) {
-//                    findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
-//                   // Toast.makeText(this@MainActivity, "Last", Toast.LENGTH_LONG).show()
-//                }
-//                else findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
-//            }
-//        })
-
+    override fun onStart() {
+        Log.d("background", "onStart: Called")
+//        loadImages()
+        super.onStart()
     }
 
     private fun loadImages() {
-
+        Log.d("background", "loadimage started")
         tempImages = listOfImages(this@MainActivity)
 
         if(tempImages1!=tempImages) {
+
+            tempImages1 = tempImages
             images.clear()
 
-
+            if(job!=null)
+            {
+                job!!.cancel()
+            }
             job = lifecycleScope.launch(Dispatchers.Default) {
 
                 images.add("dummy")
@@ -128,16 +131,11 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
                 for (img in 0 until tempImages.size) {
 
-
+                    imageIndex = img
                     Log.d("imageSize", images.size.toString())
-
-
-
 
                     val curImage = imageRepository.getImageByPath(tempImages[img])
                     if (curImage == null) {
-                        isProcessed[tempImages[img]] = 1
-
 //                        val bitmap =
 //                            ImagesGallery.decodeSampledBitmapFromFilePath(tempImages[img], 300, 300)
 //                        val image = InputImage.fromBitmap(bitmap, 0)
@@ -150,8 +148,6 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
 
                             val result = Tasks.await(task)
                             if (result.isNotEmpty()) {
-
-                                isProcessed[tempImages[img]] = 2
                                 imageRepository.insertImage(
                                     ImageEntity(
                                         tempImages[img],
@@ -201,7 +197,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                     }
 
 
-
+//                    images.clear()
                     if ( images.size>0 && images.size % 6 == 0) {
                         images.add("dummy")
 
@@ -221,8 +217,14 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
                 withContext(Dispatchers.Main) {
                     galleryAdapter.update(images)
                 }
+//                images.clear()
+                if (images.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        findViewById<TextView>(R.id.tv_no_photo_found).visibility = View.VISIBLE
+                    }
+                }
 
-                tempImages1 = tempImages
+//                tempImages1 = tempImages
 
                 Log.d("hafizsize", images.size.toString())
             }
@@ -244,15 +246,16 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
         super.onResume()
 
         loadImages()
-
     }
 
     override fun onPause() {
-        if(job!=null)
-        {
-            job!!.cancel()
-        }
         super.onPause()
+        Log.d("background", "onPause: Called")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("background", "onStop: Called")
     }
 
     override fun onRequestPermissionsResult(
@@ -265,7 +268,7 @@ class MainActivity : AppCompatActivity(), ImageProcessingCallback {
         if (requestCode == 101) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "permission granted", Toast.LENGTH_SHORT).show()
-                //loadImages3()
+                loadImages()
             } else {
                 Toast.makeText(this, "permission denied", Toast.LENGTH_SHORT).show()
             }
